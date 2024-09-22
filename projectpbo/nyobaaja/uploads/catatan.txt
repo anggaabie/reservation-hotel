@@ -1,0 +1,854 @@
+   <button onclick="openModal('modal3')">Lihat Detail Foto</button>
+
+
+
+   <?php
+include 'koneksi.php'; // Pastikan koneksi ke database ada
+
+$error_message = ''; // Variabel untuk menyimpan pesan kesalahan
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $username = isset($_POST['username']) ? $_POST['username'] : '';
+    $password = isset($_POST['password']) ? $_POST['password'] : '';
+    $email = isset($_POST['email']) ? $_POST['email'] : '';
+    $phone = isset($_POST['phone']) ? $_POST['phone'] : '';
+
+    // Memeriksa apakah username sudah ada
+    $stmt = $conn->prepare("SELECT id FROM registrasi WHERE username = ?");
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $stmt->store_result();
+
+    if ($stmt->num_rows > 0) {
+        $error_message = "Username sudah digunakan. Silakan pilih username lain.";
+    } else {
+        // Hash password sebelum disimpan ke database
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+        // Memproses data dan menyimpan ke database
+        $stmt = $conn->prepare("INSERT INTO registrasi (username, password, email, phone) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("ssss", $username, $hashed_password, $email, $phone);
+
+        if ($stmt->execute()) {
+            echo "<p>Registration successful!</p>";
+        } else {
+            $error_message = "Error: " . $stmt->error;
+        }
+    }
+
+    $stmt->close();
+    $conn->close();
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-image: url('latar.jpeg'); /* Ganti dengan path ke gambar latar belakang Anda */
+            background-size: cover;
+            background-position: center;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.8); 
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="password"], input[type="email"], input[type="phone"] {
+            width: 100%;
+            padding: 5px;
+            margin-bottom: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #808588;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #87CEEB;
+        }
+        .error-message {
+            color: red;
+            text-align: center;
+            margin-top: 10px;
+        }
+        p {
+            text-align: center;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Register</h1>
+        <form action="register.php" method="POST">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+            <label for="phone">No Telepon:</label>
+            <input type="text" id="phone" name="phone" required>
+            <button type="submit">Register</button>
+        </form>
+        <!-- Tampilkan pesan kesalahan jika ada -->
+        <?php if ($error_message): ?>
+            <p class="error-message"><?php echo $error_message; ?></p>
+        <?php endif; ?>
+        <p>Already have an account? <a href="login.php">Login here</a></p>
+    </div>
+</body>
+</html>
+
+
+
+.notification {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #4CAF50;
+    color: white;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    display: none; /* Secara default, tidak ditampilkan */
+    z-index: 1000; /* Pastikan notifikasi berada di atas elemen lain */
+    text-align: center;
+    max-width: 90%; /* Agar tidak terlalu besar di layar kecil */
+}
+
+.notification a {
+    color: #fff;
+    text-decoration: underline;
+}
+
+.notification button {
+    margin-left: 10px;
+    background-color: #555;
+    border: none;
+    color: white;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.notification button:hover {
+    background-color: #333;
+}
+</style>
+    <script defer>
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('active');
+            console.log('Sidebar toggled', sidebar.classList);
+        }
+
+        // function showNotification(message, detailUrl) {
+        //     const notification = document.querySelector('.notification');
+        //     notification.innerHTML = `${message} <a href="${detailUrl}">Lihat Detail</a>`;
+        //     notification.style.display = 'block';
+        // }
+    </script>
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <div class="menu-icon" onclick="toggleSidebar()">
+                &#9776; <!-- Simbol untuk tiga garis (ikon hamburger) -->
+            </div>
+            <div class="title">Booking History</div>
+        </div>
+    </header>
+
+    <div class="sidebar">
+        <ul>
+            <li><a href="home.php">Beranda</a></li>
+            <li><a href="history.php">History</a></li>
+            <li><a href="about.php">About</a></li>
+            <li><a href="help.html">Help</a></li>
+            <li><a href="logout.php?logout=true">Logout</a></li>
+        </ul>
+    </div>
+
+    <main>
+        <!-- <div class="notification" id="notification"></div> -->
+
+        <center><h1>Booking History</h1></center>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nama</th>
+                    <th>Room</th>
+                    <th>Check-in Date</th>
+                    <th>Check-out Date</th>
+                    <th>Fasilitas</th>
+                    <th>Total Price</th>
+                    <th>Code booking</th>
+                    <th>Status</th>
+                    <!-- <th>Opsi</th> Tambahkan kolom "Cancel" -->
+                </tr>
+            </thead>
+            <tbody>
+                <?php if ($result->num_rows > 0): ?>
+                    <?php while ($row = $result->fetch_assoc()): ?>
+                        <tr>
+                            <td><?php echo $row['username']; ?></td>
+                            <td><?php echo $row['room']; ?></td>
+                            <td><?php echo $row['check_in']; ?></td>
+                            <td><?php echo $row['check_out']; ?></td>
+                            <td><?php echo $row['fasilitas']; ?></td>
+                            <td><?php echo number_format($row['total_price'], 0, ',', '.'); ?></td>
+                            <td><?php echo $row['unique_code']; ?></td>
+                            <td><?php echo $row['status']; ?></td>
+                            <!-- <td>
+                                <form action="cancel_booking.php" method="POST" onsubmit="return confirm('Are you sure you want to cancel this booking?');">
+                                    <input type="hidden" name="booking_id" value="<?php echo $row['id']; ?>">
+                                    <button type="submit">Cancel</button>
+                                </form>
+                            </td> -->
+                        </tr>
+                             <?php if ($row['status'] === 'Diterima' && $row['notification_seen'] === 0): ?>
+                            <script>
+                                showNotification("Pesanan kamar Anda berhasil", "detail.php?code=<?php echo $row['unique_code']; ?>");
+                            </script>
+                            <?php
+                            // Update status notifikasi menjadi telah dilihat
+                            $updateQuery = $conn->prepare("UPDATE booking SET notification_seen = 1 WHERE id = ?");
+                            $updateQuery->bind_param("i", $row['id']);
+                            $updateQuery->execute();
+                            ?>
+                        <?php endif; ?> -->
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="8">Belum ada pesanan):</td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+        <br>
+        <p><strong>ATTENTION!!</strong></p>
+        <br>
+        <p><li>Silahkan gunakan code booking untuk diberitahu saat administrasi.</li></p>
+        <p><li>Untuk checkin masuk pada pukul 11:00 WIB /checkout pukul 10:00 WIB</li></p>
+        <p><li>Jika Sudah di acc,silahkan datang pada alamat dibawah.</li></p>
+        <p><li>LOKASI 📌: Jalan Lapangan Banteng Selatan No. 8 jakarta Pusat</li></p>
+
+        <br>
+       <center><p><strong>MAPS</strong></p></center>
+        <div class="map-container">
+            <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3950.287737631377!2d112.65878371508602!3d-7.930577394328188!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2dd7f7903b93b6b%3A0x87b0a68692a5a1e8!2sJalan%20Lapangan%20Banteng%20Selatan%20No.%208%2C%20Jakarta%20Selatan!5e0!3m2!1sen!2sid!4v1632764187108!5m2!1sen!2sid"
+                width="100%" height="450" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+        </div>
+
+    </main>
+
+    <footer>
+    <div class="footer-content">
+            <p>Follow us on:</p>
+            <a href="https://instagram.com/alexanderhotel44" target="_blank">Instagram</a> |
+            <a href="https://wa.me/62895340128237" target="_blank">WhatsApp</a> |
+            <a href="mailto:email@example.com" target="_blank">Email</a>
+        </div>
+    </footer>
+</body>
+</html>
+
+<?php
+$query->close();
+$conn->close();
+?>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
+.logo {
+    width: 40px;
+    height: auto;
+    margin-right: 10px; /* Jarak antara logo dan teks */
+}
+
+.title {
+    font-size: 24px;
+    text-align: center;
+    margin: 0; /* Menghapus margin yang tidak perlu */
+}
+
+        .header-right {
+            display: flex;
+            align-items: center;
+        }
+
+        .sign-in-link,
+.logout-link {
+    color: white; /* Ubah warna teks agar kontras dan terlihat */
+    text-decoration: none; /* Hilangkan garis bawah default */
+    margin-left: 20px;
+    align-self: center;
+    font-weight: bold; /* Opsional: buat teks lebih tebal agar lebih terlihat seperti tombol */
+    padding: 0; /* Hilangkan padding jika ingin benar-benar seperti teks biasa */
+    background-color: transparent; /* Pastikan background tidak ada */
+    border-radius: 0; /* Hilangkan radius untuk sudut */
+}
+
+.sign-in-link:hover,
+.logout-link:hover {
+    text-decoration: underline; /* Tambahkan underline saat hover untuk efek interaktif */
+}
+
+        .user-name {
+            color: #fff;
+            margin-left: 10px;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #2c3e50;
+            position: fixed;
+            top: 0;
+            left: -250px;
+            height: 100%;
+            padding-top: 60px;
+            transition: left 0.3s ease;
+            z-index: 999;
+        }
+
+        .sidebar.active {
+            left: 0;
+        }
+
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar ul li {
+            width: 100%;
+        }
+
+        .sidebar ul li a {
+            display: block;
+            padding: 15px 20px;
+            color: #fff;
+            text-decoration: none;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .sidebar ul li a:hover {
+            background-color: #444;
+        }
+
+        main {
+            margin-left: 0;
+            padding: 20px;
+            transition: margin-left 0.3s ease;
+        }
+
+        main.sidebar-active {
+            margin-left: 250px;
+        }
+
+        .room-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            /* Jarak antara card */
+            justify-content: center;
+            /* Rata tengah */
+        }
+
+        .room-card {
+            flex: 1 1 calc(33.333% - 20px);
+            /* 3 card per baris dengan gap 20px */
+            max-width: calc(33.333% - 20px);
+            /* 3 card per baris dengan gap 20px */
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            background-color: #f9f9f9;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .room-card img {
+            width: 100%;
+            /* Lebar gambar mengikuti lebar card */
+            height: auto;
+            /* Menjaga proporsi gambar */
+            border-radius: 8px;
+            /* Menjaga border-radius gambar */
+            display: block;
+            /* Menghilangkan ruang di bawah gambar */
+            margin: 0 auto;
+            /* Memastikan gambar berada di tengah */
+        }
+
+        .room-card h2 {
+            margin: 10px 0;
+        }
+
+        .room-card p {
+            margin: 5px 0;
+        }
+
+        .room-card button {
+            background-color: #333;
+            color: #fff;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .room-card button:hover {
+            background-color: #555;
+        }
+
+        footer {
+            background-color: #2c3e50;
+            color: #fff;
+            text-align: center;
+            padding: 15px 0;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+            left: 0;
+        }
+
+       
+        .footer-content a {
+            color: #fff;
+            text-decoration: none;
+            margin: 0 5px;
+        }
+
+        .footer-content a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                left: -100%;
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                left: 0;
+                transform: translateX(0);
+            }
+
+            main {
+                margin-left: 0;
+            }
+
+            .room-card {
+                flex: 1 1 calc(50% - 20px);
+                /* 2 card per baris pada layar kecil */
+                max-width: calc(50% - 20px);
+                /* 2 card per baris pada layar kecil */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .room-card {
+                flex: 1 1 100%;
+                /* 1 card per baris pada layar sangat kecil */
+                max-width: 100%;
+                /* 1 card per baris pada layar sangat kecil */
+            }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 60%;
+            max-width: 500px;
+            height: auto;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .modal-img {
+            width: 100%;
+            height: auto;
+        }
+
+        .prev,
+        .next {
+            cursor: pointer;
+            position: absolute;
+            top: 50%;
+            width: auto;
+            padding: 16px;
+            margin-top: -22px;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            transition: 0.6s ease;
+            border-radius: 0 3px 3px 0;
+            user-select: none;
+        }
+
+        .next {
+            right: 0;
+            border-radius: 3px 0 0 3px;
+        }
+
+        .prev:hover,
+        .next:hover {
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+
+        .dots {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .dot {
+            cursor: pointer;
+            height: 15px;
+            width: 15px;
+            margin: 0 2px;
+            background-color: #bbb;
+            border-radius: 50%;
+            display: inline-block;
+            transition: background-color 0.6s ease;
+        }
+
+        .active,
+        .dot:hover {
+            background-color: #717171;
+        }
+
+        .notification {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 1000;
+            /* Pastikan notifikasi di atas konten lain */
+        }
+
+        .notification a {
+            color: #fff;
+            text-decoration: underline;
+        }
+
+        .notification button {
+            margin-left: 10px;
+            background-color: #555;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .notification button:hover {
+            background-color: #333;
+        }
+
+        /* Animasi Fade In */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+        }
+
+        .notif-icon {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .notif-badge {
+            background-color: red;
+            color: white;
+            border-radius: 50%;
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 10px;
+            height: 10px;
+            display: inline-block;
+        }
+
+        header, footer, .sidebar {
+    background-color: #2c3e50; /* Pastikan semua menggunakan warna yang sama */
+    color: #fff; /* Warna teks jika ingin seragam */
+}
+
+
+
+
+
+
+
+
+
+<?php
+session_start();
+include 'koneksi.php'; // Pastikan koneksi ke database ada
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $username = isset($_POST['username']) ? $_POST['username'] : '';
+    $password = isset($_POST['password']) ? $_POST['password'] : '';
+
+    // Query untuk memeriksa kredensial pengguna
+    $sql = "SELECT id, username, password, level FROM user WHERE username = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('s', $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows === 1) {
+        $user = $result->fetch_assoc();
+        // Verifikasi password
+        if ($password === $user['password']) {
+            $_SESSION['level'] = $user['level'];
+            $_SESSION['user_id'] = $user['id'];
+
+            // Redirect berdasarkan role
+            if ($user['level'] === 'admin') {
+                header("Location: admin.php");
+            } elseif ($user['level'] === 'resepsionis') {
+                header("Location: resepsionis.php");
+            } else {
+                // Handle unknown roles if needed
+                echo "Role tidak dikenal.";
+                exit();
+            }
+            exit();
+        } else {
+           
+        }
+    } else {
+        echo "Username tidak ditemukan.";
+    }
+
+    // Memeriksa kredensial pengguna biasa
+    $stmt = $conn->prepare("SELECT password FROM registrasi WHERE username = ?");
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $stmt->store_result();
+
+    if ($stmt->num_rows === 1) {
+        $stmt->bind_result($hashed_password);
+        $stmt->fetch();
+
+        if (password_verify($password, $hashed_password)) {
+            $_SESSION['role'] = 'user';
+            $_SESSION['username'] = $username;
+            header("Location: index.php");
+            exit();
+        } else {
+            $error_message = "Invalid username or password.";
+        }
+    } else {
+        $error_message = "Invalid username or password.";
+    }
+
+    $stmt->close();
+    $conn->close();
+} else {
+    $error_message = ".";
+}
+
+
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-image: url('latar.jpeg'); /* Ganti dengan path ke gambar latar belakang Anda */
+            background-size: cover;
+            background-position: center;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.8); 
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 5px;
+            margin-bottom: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #808588;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #87CEEB;
+        }
+        p {
+            text-align: center;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .error {
+            color: red;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Login</h1>
+        <form action="login.php" method="POST">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+
+            <button type="submit">Login</button>
+        </form>
+        <?php if (isset($error_message)): ?>
+            <p class="error"><?php echo $error_message; ?></p>
+        <?php endif; ?>
+        <p>Don't have an account? <a href="register.php">Register here</a></p>
+    </div>
+</body>
+</html>
